@@ -4,6 +4,7 @@ const inq = require("inquirer");
 const fs = require("fs");
 
 
+
 // functions 
 
 //  function to add a department
@@ -120,6 +121,33 @@ const viewEmployees = () => {
     })
 };
 
+const viewRoles = () => {
+    connection.query(`SELECT Emp.First_Name, Emp.Last_Name, R.Title AS Roles_Title, R.Salary AS Roles_Salary, CONCAT(mgr.First_Name, "", mgr.Last_Name) AS Managers_name
+    FROM Employee AS Emp
+    LEFT JOIN Roles AS r ON Emp.Role_Id = R.id
+    LEFT JOIN Employee AS mgr ON Emp.Manager_id = Mgr.id
+    LEFT JOIN Department AS d ON R.Department_id = d.id
+    LEFT JOIN Roles AS s ON r.Salary =  r.Salary`, (err, results) => {
+        if (err) throw err;
+        console.log(results);
+        mainMenu();
+    })
+}
+
+const viewDepartments = () => {
+    connection.query(`SELECT Emp.First_Name, Emp.Last_Name, R.Title AS Roles_Title, R.Salary AS Roles_Salary, CONCAT(mgr.First_Name, "", mgr.Last_Name) AS Managers_name
+    FROM Employee AS Emp
+    LEFT JOIN Roles AS r ON Emp.Role_Id = R.id
+    LEFT JOIN Employee AS mgr ON Emp.Manager_id = Mgr.id
+    LEFT JOIN Department AS d ON R.Department_id = d.id
+    LEFT JOIN Roles AS s ON r.Salary =  r.Salary`, (err, results) => {
+        if (err) throw err;
+        console.log(results);
+        mainMenu();
+    })
+
+}
+
 const mainMenu = () => {
     inq.prompt([{
 
@@ -131,6 +159,8 @@ const mainMenu = () => {
             "Add Role",
             "Add Employee",
             "View Employees",
+            "View Roles",
+            "View Departments",
             "Exit"
 
         ]
