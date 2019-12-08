@@ -22,37 +22,102 @@ const addDepartment = () => {
 };
 
 // function to add a role
-const addRole = () => {
-    inq.prompt([{
-            type: "input",
-            message: "Title?",
-            name: "title"
-        },
-        {
-            type: "input",
-            message: "Salary?",
-            name: "Salary"
+const addRoles = () => {
+    connection.query("SELECT * FROM Department", (err, rows) => {
+        if (err) throw err;
 
-        },
-        {
-            type: "list",
-            message: "Department?",
-            name: "Department",
-            choices: function(answers) {
-                return { name: "ParkerExpo", value: 1, short: "ParkerExpo" }
+        inq.prompt([{
+                type: "input",
+                message: "Title?",
+                name: "title"
+            },
+            {
+                type: "input",
+                message: "Salary?",
+                name: "Salary"
 
+            },
+            {
+                type: "list",
+                message: "Department?",
+                name: "Department",
+                choices: function() {
+                    return rows.map(row => {
+                        return { name: row.name, value: row.id, short: row.name };
+                    })
+                }
             }
+        ]).then(answers => {
+            connection.query('INSERT INTO Roles (title, Salary, Department_id) VALUES (?,?,?)', [answers.title, answers.Salary, answers.Department], (err, data) => {
+                if (err) throw err;
+                mainMenu();
+            })
+        })
 
-
-        }
-    ]).then(answers => {
-        console.log(answers);
     })
+
 };
 
 // fucntion to add a employee
 const addEmployee = () => {
-    console.log("Add an Employee")
+    connection.query("SELECT * FROM Roles", (err, Roles) => {
+        if (err) throw err;
+        connection.query("SELECT * FROM Employee", (err, Employee) => {
+            if (err) throw err;
+
+            inq.prompt([{
+                    type: "input",
+                    message: "First Name?",
+                    name: "First_Name"
+                },
+                {
+                    type: "input",
+                    message: "Last Name?",
+                    name: "Last_Name"
+                },
+                {
+                    type: "list",
+                    message: "Role?",
+                    name: "RoleId",
+                    choices: function() {
+                        return Roles.map(Role => {
+                            return { name: Role.Title, value: Role.id, short: Role.Title };
+                        })
+                    }
+                },
+                {
+                    type: "list",
+                    message: "Manager?",
+                    name: "ManagerId",
+                    choices: function() {
+                        return Employee.map(Employee => {
+                            return { name: `${Employee.First_Name} , ${Employee.Last_Name}`, value: Employee.id, short: Employee.Last_Name };
+                        });
+                    }
+                }
+            ]).then(answers => {
+                connection.query('INSERT INTO Employee (First_Name, Last_Name, Role_id, Manager_id) VALUES (?,?,?,?)', [answers.First_Name, answers.Last_Name, answers.RoleId, answers.ManagerId],
+                    (err, results) => {
+                        if (err) throw err;
+                        mainMenu();
+                    })
+            })
+
+
+        })
+    })
+};
+
+const viewEmployees = () => {
+    connection.query(`SELECT Emp.First_Name, Emp.Last_Name, R.Title AS Roles_Title, CONCAT(mgr.First_Name, '', mgr.Last_Name) AS Managers_name
+    FROM Employee AS Emp
+    LEFT JOIN Roles AS r ON Emp.Role_Id = R.id
+    LEFT JOIN Employee AS mgr ON Emp.Manager_id = Mgr.id
+    LEFT JOIN Department AS d ON R.Department_id = d.id`, (err, results) => {
+        if (err) throw err;
+        console.table(results);
+        mainMenu();
+    })
 };
 
 const mainMenu = () => {
@@ -64,7 +129,10 @@ const mainMenu = () => {
         choices: [
             "Add Department",
             "Add Role",
-            "Add Employee"
+            "Add Employee",
+            "View Employees",
+            "Exit"
+
         ]
 
     }]).then(answers => {
@@ -75,15 +143,29 @@ const mainMenu = () => {
                 break;
 
             case "Add Role":
-                addRole();
+                addRoles();
                 break;
 
             case "Add Employee":
                 addEmployee();
                 break;
 
+            case 'View Employees':
+                viewEmployees();
+                break;
+
+            case 'View Roles':
+                viewRoles();
+                break;
+
+            case 'View Departments':
+                viewDepartments();
+                break;
+
             default:
                 console.log("Exiting...");
+                connection.end();
+                process.exit();
         }
     });
 };
@@ -100,6 +182,4 @@ const connection = mysql.createConnection({
 connection.connect(function(err) {
     if (err) throw err;
     mainMenu();
-
-
 });
